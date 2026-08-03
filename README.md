@@ -1,6 +1,6 @@
 # Task Tracker — MySQL + FastAPI + Vanilla JS
 
-A full-stack task/project tracker built with a classical backend stack: MySQL, FastAPI, SQLAlchemy, JWT auth, and a plain HTML/CSS/JS frontend (no framework — kept simple so every line is explainable).
+A full-stack task/project tracker built with a classical backend stack: MySQL, FastAPI, SQLAlchemy, JWT auth, and a plain HTML/CSS/JS frontend (no framework ).
 
 ## Stack
 - **Database:** MySQL (via XAMPP)
