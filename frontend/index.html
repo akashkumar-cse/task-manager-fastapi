@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Task Tracker — Login</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="form-box card">
+  <h1 id="formTitle">Login</h1>
+  <div id="errorMsg" class="error"></div>
+
+  <div id="nameField" style="display:none">
+    <input type="text" id="name" placeholder="Full name">
+  </div>
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="password" placeholder="Password">
+
+  <button id="submitBtn" onclick="handleSubmit()">Login</button>
+  <p style="margin-top:12px; font-size:14px;">
+    <span id="toggleText">Don't have an account?</span>
+    <a href="#" id="toggleLink" onclick="toggleMode(event)">Register</a>
+  </p>
+</div>
+
+<script src="app.js"></script>
+<script>
+  let mode = "login"; // or "register"
+
+  function toggleMode(e) {
+    e.preventDefault();
+    mode = mode === "login" ? "register" : "login";
+    document.getElementById("formTitle").textContent = mode === "login" ? "Login" : "Register";
+    document.getElementById("submitBtn").textContent = mode === "login" ? "Login" : "Register";
+    document.getElementById("nameField").style.display = mode === "register" ? "block" : "none";
+    document.getElementById("toggleText").textContent = mode === "login" ? "Don't have an account?" : "Already have an account?";
+    document.getElementById("toggleLink").textContent = mode === "login" ? "Register" : "Login";
+    document.getElementById("errorMsg").textContent = "";
+  }
+
+  async function handleSubmit() {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const errorMsg = document.getElementById("errorMsg");
+    errorMsg.textContent = "";
+
+    try {
+      if (mode === "register") {
+        const name = document.getElementById("name").value.trim();
+        if (!name || !email || !password) throw new Error("All fields are required");
+        await registerUser(name, email, password);
+        await loginUser(email, password);
+      } else {
+        if (!email || !password) throw new Error("Email and password required");
+        await loginUser(email, password);
+      }
+      window.location.href = "projects.html";
+    } catch (err) {
+      errorMsg.textContent = err.message;
+    }
+  }
+
+  // If already logged in, skip straight to projects
+  if (getToken()) window.location.href = "projects.html";
+</script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <span class="brand">Task Tracker</span>
+  <div>
+    <a href="projects.html">Projects</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="#" onclick="logout()">Logout</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>Dashboard</h1>
+  <div id="statsGrid" class="stats-grid">Loading...</div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  requireAuth();
+  loadDashboard();
+
+  async function loadDashboard() {
+    const grid = document.getElementById("statsGrid");
+    try {
+      const stats = await getDashboard();
+      grid.innerHTML = `
+        <div class="stat-box"><div class="num">${stats.total_projects}</div><div class="label">Projects</div></div>
+        <div class="stat-box"><div class="num">${stats.total_tasks}</div><div class="label">Total Tasks</div></div>
+        <div class="stat-box"><div class="num">${stats.todo}</div><div class="label">Todo</div></div>
+        <div class="stat-box"><div class="num">${stats.in_progress}</div><div class="label">In Progress</div></div>
+        <div class="stat-box"><div class="num">${stats.done}</div><div class="label">Done</div></div>
+      `;
+    } catch (err) {
+      grid.innerHTML = `<p class="error">${err.message}</p>`;
+    }
+  }
+</script>
+</body>
+</html>

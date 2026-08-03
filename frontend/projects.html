@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>My Projects</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <span class="brand">Task Tracker</span>
+  <div>
+    <a href="projects.html">Projects</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="#" onclick="logout()">Logout</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="card">
+    <h1>New Project</h1>
+    <div id="errorMsg" class="error"></div>
+    <input type="text" id="pName" placeholder="Project name">
+    <textarea id="pDesc" placeholder="Description (optional)" rows="2"></textarea>
+    <button onclick="handleCreate()">Create Project</button>
+  </div>
+
+  <div class="card">
+    <h2>My Projects</h2>
+    <div id="projectList">Loading...</div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  requireAuth();
+  loadProjects();
+
+  async function loadProjects() {
+    const listEl = document.getElementById("projectList");
+    try {
+      const projects = await getProjects();
+      if (!projects.length) {
+        listEl.innerHTML = "<p style='color:#6b7280;font-size:14px'>No projects yet — create one above.</p>";
+        return;
+      }
+      listEl.innerHTML = projects.map(p => `
+        <div class="project-item">
+          <a href="tasks.html?project_id=${p.id}&project_name=${encodeURIComponent(p.name)}">${p.name}</a>
+          <div class="actions">
+            <button class="danger" onclick="handleDelete(${p.id})">Delete</button>
+          </div>
+        </div>
+      `).join("");
+    } catch (err) {
+      listEl.innerHTML = `<p class="error">${err.message}</p>`;
+    }
+  }
+
+  async function handleCreate() {
+    const name = document.getElementById("pName").value.trim();
+    const description = document.getElementById("pDesc").value.trim();
+    const errorMsg = document.getElementById("errorMsg");
+    errorMsg.textContent = "";
+    if (!name) { errorMsg.textContent = "Project name is required"; return; }
+
+    try {
+      await createProject(name, description);
+      document.getElementById("pName").value = "";
+      document.getElementById("pDesc").value = "";
+      loadProjects();
+    } catch (err) {
+      errorMsg.textContent = err.message;
+    }
+  }
+
+  async function handleDelete(id) {
+    if (!confirm("Delete this project and all its tasks?")) return;
+    try {
+      await deleteProject(id);
+      loadProjects();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+</script>
+</body>
+</html>

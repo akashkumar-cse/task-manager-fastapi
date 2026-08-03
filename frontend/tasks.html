@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tasks</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav>
+  <span class="brand">Task Tracker</span>
+  <div>
+    <a href="projects.html">Projects</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="#" onclick="logout()">Logout</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1 id="pageTitle">Tasks</h1>
+
+  <div class="card">
+    <h2>New Task</h2>
+    <div id="errorMsg" class="error"></div>
+    <input type="text" id="tTitle" placeholder="Task title">
+    <textarea id="tDesc" placeholder="Description (optional)" rows="2"></textarea>
+    <select id="tStatus">
+      <option value="todo">Todo</option>
+      <option value="in-progress">In Progress</option>
+      <option value="done">Done</option>
+    </select>
+    <select id="tPriority">
+      <option value="low">Low</option>
+      <option value="medium" selected>Medium</option>
+      <option value="high">High</option>
+    </select>
+    <input type="date" id="tDue">
+    <button onclick="handleCreate()">Add Task</button>
+  </div>
+
+  <div class="card">
+    <div class="filters">
+      <select id="filterStatus" onchange="loadTasks()">
+        <option value="">All statuses</option>
+        <option value="todo">Todo</option>
+        <option value="in-progress">In Progress</option>
+        <option value="done">Done</option>
+      </select>
+      <select id="filterPriority" onchange="loadTasks()">
+        <option value="">All priorities</option>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+    </div>
+    <div id="taskList">Loading...</div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  requireAuth();
+
+  const params = new URLSearchParams(window.location.search);
+  const projectId = params.get("project_id");
+  const projectName = params.get("project_name") || "Project";
+  document.getElementById("pageTitle").textContent = `Tasks — ${projectName}`;
+
+  if (!projectId) window.location.href = "projects.html";
+
+  loadTasks();
+
+  async function loadTasks() {
+    const listEl = document.getElementById("taskList");
+    const status = document.getElementById("filterStatus").value;
+    const priority = document.getElementById("filterPriority").value;
+
+    try {
+      let tasks;
+      if (status || priority) {
+        tasks = (await filterTasks(status, priority)).filter(t => t.project_id == projectId);
+      } else {
+        tasks = await getTasks(projectId);
+      }
+
+      if (!tasks.length) {
+        listEl.innerHTML = "<p style='color:#6b7280;font-size:14px'>No tasks match.</p>";
+        return;
+      }
+
+      listEl.innerHTML = tasks.map(t => `
+        <div class="task-item">
+          <div>
+            <strong>${t.title}</strong>
+            <span class="badge ${t.status}">${t.status}</span>
+            <span class="badge ${t.priority}">${t.priority}</span>
+            ${t.due_date ? `<div style="font-size:12px;color:#6b7280;margin-top:4px">Due: ${t.due_date.split('T')[0]}</div>` : ""}
+          </div>
+          <div class="actions">
+            <select onchange="handleStatusChange(${t.id}, this.value)">
+              <option value="todo" ${t.status === "todo" ? "selected" : ""}>Todo</option>
+              <option value="in-progress" ${t.status === "in-progress" ? "selected" : ""}>In Progress</option>
+              <option value="done" ${t.status === "done" ? "selected" : ""}>Done</option>
+            </select>
+            <button class="danger" onclick="handleDelete(${t.id})">Delete</button>
+          </div>
+        </div>
+      `).join("");
+    } catch (err) {
+      listEl.innerHTML = `<p class="error">${err.message}</p>`;
+    }
+  }
+
+  async function handleCreate() {
+    const title = document.getElementById("tTitle").value.trim();
+    const description = document.getElementById("tDesc").value.trim();
+    const status = document.getElementById("tStatus").value;
+    const priority = document.getElementById("tPriority").value;
+    const due = document.getElementById("tDue").value;
+    const errorMsg = document.getElementById("errorMsg");
+    errorMsg.textContent = "";
+    if (!title) { errorMsg.textContent = "Task title is required"; return; }
+
+    try {
+      await createTask(projectId, {
+        title, description, status, priority,
+        due_date: due ? new Date(due).toISOString() : null,
+      });
+      document.getElementById("tTitle").value = "";
+      document.getElementById("tDesc").value = "";
+      document.getElementById("tDue").value = "";
+      loadTasks();
+    } catch (err) {
+      errorMsg.textContent = err.message;
+    }
+  }
+
+  async function handleStatusChange(id, status) {
+    try {
+      await updateTask(id, { status });
+      loadTasks();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  async function handleDelete(id) {
+    if (!confirm("Delete this task?")) return;
+    try {
+      await deleteTask(id);
+      loadTasks();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+</script>
+</body>
+</html>
